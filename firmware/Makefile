@@ -18,7 +18,8 @@ LFUSE=0xef
 # ISP=usbasp   PORT=/dev/usb/ttyUSB0
 # ISP=stk500v2 PORT=/dev/ttyUSB0
 ISP=usbasp
-PORT=/dev/usb/ttyUSB0
+#PORT=/dev/usb/ttyUSB0
+PORT=usb
 
 help:
 	@echo "Usage: make                same as make help"
@@ -37,9 +38,10 @@ help:
 	@echo "       ISP=${ISP}"
 	@echo "       PORT=${PORT}"
 
-COMPILE = avr-gcc -Wall -O2 -Iusbdrv -I. -mmcu=$(TARGET) # -DDEBUG_LEVEL=2
+COMPILE = avr-gcc -Wall -Os -fno-move-loop-invariants -fno-tree-scev-cprop -Iusbdrv -I. -mmcu=$(TARGET) # -DDEBUG_LEVEL=2
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o isp.o clock.o tpi.o main.o
+#OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o isp.o clock.o tpi.o main.o
+OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o isp.o clock.o main.o
 
 .c.o:
 	$(COMPILE) -c $< -o $@
@@ -60,7 +62,7 @@ clean:
 
 # file targets:
 main.bin:	$(OBJECTS)
-	$(COMPILE) -o main.bin $(OBJECTS) -Wl,-Map,main.map
+	$(COMPILE) -o main.bin $(OBJECTS) -Wl,-Map,main.map -Wl,--relax
 
 main.hex:	main.bin
 	rm -f main.hex main.eep.hex
@@ -75,7 +77,7 @@ disasm:	main.bin
 cpp:
 	$(COMPILE) -E main.c
 
-flash:
+flash: main.hex
 	avrdude -c ${ISP} -p ${TARGET} -P ${PORT} -U flash:w:main.hex
 
 fuses:
